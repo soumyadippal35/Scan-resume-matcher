@@ -1,72 +1,58 @@
 # SCAN — Resume × JD Match Engine
 
+**Live site:** [scan-resume-matcher-one.vercel.app](https://scan-resume-matcher-one.vercel.app)
+
+![SCAN preview](./Screenshot.png)
+
 An ambient 3D resume-to-job-description match tool. Upload a resume (PDF/DOCX), paste a job
 description, and get a keyword score (computed locally, instantly) blended with an AI semantic
-fit score (via a Claude API call on the backend).
+fit score powered by the Claude API.
 
-Tabs: **Scan** · **Compare** (rank one resume against several JDs) · **History** (saved locally
-in your browser) · **My Resume** (a live-rendered copy of the resume used to build this, with a
-`.docx` download).
+## Features
 
-Stack: React + TypeScript + Vite, react-three-fiber/Three.js for the 3D background, pdfjs-dist +
-mammoth for in-browser file parsing, jsPDF for report export, and a Vercel serverless function
-(`/api/match`) calling the Anthropic API for the semantic score.
+- **Scan** — drag-and-drop resume upload (PDF/DOCX parsed entirely in-browser), paste a job
+  description, get a blended keyword + AI semantic match score, ATS format checks, and
+  improvement suggestions. Export the result as a PDF report.
+- **Compare** — score one resume against multiple job descriptions at once and see them ranked
+  by fit.
+- **History** — every scan is saved locally so you can track past matches over time.
+- **My Resume** — a live-rendered preview of the resume behind this project, with a `.docx`
+  download.
 
-## 1. Run it locally
+## Tech stack
+
+- **Frontend:** React + TypeScript + Vite
+- **3D/visuals:** Three.js via react-three-fiber, @react-three/drei
+- **File parsing:** pdfjs-dist (PDF), mammoth (DOCX) — all client-side
+- **Reports:** jsPDF
+- **Backend:** Vercel serverless function (`/api/match`) calling the Anthropic API for semantic
+  fit scoring
+
+## Run it locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-This starts the frontend at `http://localhost:5173`. The **Scan** and **Compare** tabs will still
-work for keyword scoring without a backend — the semantic score will just silently fall back to
-keyword-only if `/api/match` isn't available (which it won't be under plain `vite dev`, since that
-doesn't run serverless functions).
+Opens at `http://localhost:5173`. The keyword-scoring side of Scan/Compare works without a
+backend; the semantic score needs `/api/match`, which only runs under Vercel (see below).
 
-To test the real backend locally, install the Vercel CLI and run:
+To test the real backend locally, install the Vercel CLI:
 
 ```bash
 npm install -g vercel
-cp .env.example .env      # then edit .env and paste in your real key
+cp .env.example .env      # then paste in your real ANTHROPIC_API_KEY
 vercel dev
 ```
 
-## 2. Get an Anthropic API key
+## Deploy your own copy
 
-Go to https://console.anthropic.com/settings/keys, create a key, and make sure the account has
-billing/credit attached (Settings → Billing). **This is almost certainly why the old deployment
-stopped working** — a free-tier key runs out of credit and every `/api/match` call then fails.
-The site is built to degrade gracefully (keyword-only score) when that happens, but semantic
-scoring needs a funded key.
+1. Get an API key at [console.anthropic.com](https://console.anthropic.com/settings/keys) and
+   make sure the account has billing/credit attached.
+2. Push this repo to your own GitHub account.
+3. Import it on [vercel.com](https://vercel.com) — Vite is auto-detected.
+4. Add an environment variable: `ANTHROPIC_API_KEY` = your key.
+5. Deploy.
 
-## 3. Push to a new GitHub repo
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: SCAN 3D resume matcher"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<new-repo-name>.git
-git push -u origin main
-```
-
-## 4. Deploy on Vercel
-
-1. Go to https://vercel.com → **Add New → Project** → import your new GitHub repo.
-2. Framework preset: **Vite** (should auto-detect).
-3. Before the first deploy (or right after, then redeploy), go to **Project Settings →
-   Environment Variables** and add:
-   - `ANTHROPIC_API_KEY` = your key from step 2
-4. Deploy. `/api/match.js` is auto-detected by Vercel as a serverless function — no extra config
-   needed beyond the env var.
-
-That's it — no separate backend server to host. The React app and the API function deploy
-together as one Vercel project.
-
-## Notes
-
-- All resume parsing happens **in the browser** — the raw file never leaves the user's machine,
-  only the extracted text is sent to `/api/match` for the semantic check.
-- History is stored in `localStorage`, so it's per-browser, not per-account.
-- The 3D background respects `prefers-reduced-motion` and falls back to a static gradient.
+## Project structure
